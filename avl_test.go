@@ -11,6 +11,10 @@ func Test_avl(t *testing.T) {
 
 	a := GenAVL()
 
+	v, ok := a.Get(1)
+	assert.False(t, ok)
+	assert.Nil(t, v)
+
 	l1, l2 := a.Print()
 	assert.Nil(t, l1)
 	assert.Nil(t, l2)
@@ -22,7 +26,7 @@ func Test_avl(t *testing.T) {
 	assert.Equal(t, 101, len(l1))
 	assert.Equal(t, 101, len(l2))
 
-	v, ok := a.Get(55)
+	v, ok = a.Get(55)
 	assert.True(t, ok)
 	assert.Equal(t, "55", v)
 

@@ -14,10 +14,6 @@ var max = func(a int, b int) int {
 	return a
 }
 
-type avl struct {
-	root *node
-}
-
 type node struct {
 	left, right *node
 	height      int
@@ -25,24 +21,16 @@ type node struct {
 	value       interface{}
 }
 
+type avl struct {
+	root *node
+}
+
 func (a *avl) height(cur *node) int {
+
 	if cur == nil {
 		return 0
 	}
 	return cur.height
-
-}
-
-func (a *avl) rightSpin(cur *node) (ret *node) {
-
-	ret = cur.left
-	cur.left = ret.right
-	ret.right = cur
-
-	cur.height = max(a.height(cur.left), a.height(cur.right))
-	ret.height = max(a.height(ret.left), a.height(ret.right))
-
-	return
 }
 
 func (a *avl) leftSpin(cur *node) (ret *node) {
@@ -51,149 +39,143 @@ func (a *avl) leftSpin(cur *node) (ret *node) {
 	cur.right = ret.left
 	ret.left = cur
 
-	cur.height = max(a.height(cur.left), a.height(cur.right))
-	ret.height = max(a.height(ret.left), a.height(ret.right))
+	cur.height = max(a.height(cur.left), a.height(cur.right)) + 1
+	ret.height = max(a.height(ret.left), a.height(ret.right)) + 1
+
+	return
+}
+
+func (a *avl) rightSpin(cur *node) (ret *node) {
+
+	ret = cur.left
+	cur.left = ret.right
+	ret.right = cur
+
+	cur.height = max(a.height(cur.left), a.height(cur.right)) + 1
+	ret.height = max(a.height(ret.left), a.height(ret.right)) + 1
 
 	return
 }
 
 func (a *avl) LL_logic(cur *node) (ret *node) {
-
-	//LL
 	return a.rightSpin(cur)
 }
 
 func (a *avl) RR_logic(cur *node) (ret *node) {
-
-	//RR
 	return a.leftSpin(cur)
 }
 
 func (a *avl) LR_logic(cur *node) (ret *node) {
-
-	//LR
 	cur.left = a.leftSpin(cur.left)
-	//LL
 	return a.rightSpin(cur)
-
 }
 
 func (a *avl) RL_logic(cur *node) (ret *node) {
-
-	//RL
 	cur.right = a.rightSpin(cur.right)
-	//RR
 	return a.leftSpin(cur)
-
 }
 
-func (a *avl) insert(cur, new *node) (ret *node) {
-
-	switch {
-	case cur == nil:
-		ret = new
-	case cur.key > new.key:
-		//left
-		cur.left = a.insert(cur.left, new)
-		ret = cur
-		if a.height(ret.left)-a.height(ret.right) == 2 {
-			if new.key < ret.left.key {
-				ret = a.LL_logic(ret)
-			} else {
-				ret = a.LR_logic(ret)
-			}
-		}
-
-		ret.height = max(a.height(ret.left), a.height(ret.right)) + 1
-	case cur.key < new.key:
-		//right
-		cur.right = a.insert(cur.right, new)
-		ret = cur
-		if a.height(ret.right)-a.height(ret.left) == 2 {
-			if new.key > ret.right.key {
-				ret = a.RR_logic(ret)
-			} else {
-				//RL-spin
-				ret = a.RL_logic(ret)
-			}
-		}
-
-		ret.height = max(a.height(ret.left), a.height(ret.right)) + 1
-	default:
-		cur.value = new.value
-		ret = cur
-	}
-
-	return
-}
-
-func (a *avl) minNode(cur *node) *node {
-
-	for cur != nil {
+func (a *avl) getMinNode(cur *node) *node {
+	for cur.left != nil {
 		cur = cur.left
 	}
 	return cur
 }
-
-func (a *avl) maxNode(cur *node) *node {
-
-	for cur != nil {
+func (a *avl) getMaxNode(cur *node) *node {
+	for cur.right != nil {
 		cur = cur.right
 	}
 	return cur
+}
+
+func (a *avl) checkBalance(cur *node) *node {
+
+	if cur == nil {
+		return nil
+	}
+
+	switch a.height(cur.left) - a.height(cur.right) {
+	case 2:
+		if a.height(cur.left.left) > a.height(cur.left.right) {
+			//LL
+			cur = a.LL_logic(cur)
+		} else {
+			//LR
+			cur = a.LR_logic(cur)
+		}
+
+	case -2:
+		if a.height(cur.right.left) < a.height(cur.right.right) {
+			//RR
+			cur = a.RR_logic(cur)
+		} else {
+			//RL
+			cur = a.RL_logic(cur)
+		}
+
+	default:
+		cur.height = max(a.height(cur.left), a.height(cur.right)) + 1
+	}
+
+	return cur
+}
+
+func GenAVL() AVL {
+	return &avl{}
+}
+
+func (a *avl) insert(cur *node, new *node) (ret *node) {
+
+	switch {
+	case cur == nil:
+		new.height = 1
+		cur = new
+	case cur.key > new.key:
+		cur.left = a.insert(cur.left, new)
+	case cur.key < new.key:
+		cur.right = a.insert(cur.right, new)
+	case cur.key == new.key:
+		cur.value = new.value
+	}
+
+	ret = a.checkBalance(cur)
+
+	return
 }
 
 func (a *avl) delete(cur *node, key int) (ret *node) {
 
 	switch {
 	case cur == nil:
-		return nil
 	case cur.key > key:
-		//left
 		cur.left = a.delete(cur.left, key)
-		ret = cur
-
-		if a.height(ret.right)-a.height(ret.left) == 2 {
-			if a.height(ret.right.right) > a.height(ret.right.left) {
-				ret = a.RR_logic(ret)
-			} else {
-				ret = a.RL_logic(ret)
-			}
-		}
 	case cur.key < key:
-		//right
 		cur.right = a.delete(cur.right, key)
-		ret = cur
-
-		if a.height(ret.left)-a.height(ret.right) == 2 {
-			if a.height(ret.left.left) > a.height(ret.left.right) {
-				ret = a.LL_logic(ret)
-			} else {
-				ret = a.LR_logic(ret)
-			}
-		}
-	default:
+	case cur.key == key:
 		switch {
-		case cur.left != nil && cur.right == nil:
-			ret = cur.left
-		case cur.left == nil && cur.right != nil:
-			ret = cur.right
-		default:
+		case cur.left == nil && cur.right == nil:
+			cur = nil
+		case cur.left != nil && cur.right != nil:
 			if a.height(cur.left) > a.height(cur.right) {
-				tmpNode := a.maxNode(cur.left)
+				tmpNode := a.getMaxNode(cur.left)
 				cur.key = tmpNode.key
 				cur.value = tmpNode.value
 				cur.left = a.delete(cur.left, tmpNode.key)
-				ret = cur
 			} else {
-				tmpNode := a.minNode(cur.right)
+				tmpNode := a.getMinNode(cur.right)
 				cur.key = tmpNode.key
 				cur.value = tmpNode.value
 				cur.right = a.delete(cur.right, tmpNode.key)
-				ret = cur
 			}
+		case cur.left != nil:
+			cur = cur.left
+		case cur.right != nil:
+			cur = cur.right
 		}
 	}
+
+	ret = a.checkBalance(cur)
+
 	return
 }
 
@@ -201,16 +183,15 @@ func (a *avl) get(cur *node, key int) (value interface{}, ok bool) {
 
 	switch {
 	case cur == nil:
-		return 0, false
+		value, ok = nil, false
+	case cur.key > key:
+		value, ok = a.get(cur.left, key)
+	case cur.key < key:
+		value, ok = a.get(cur.right, key)
 	case cur.key == key:
-		return cur.value, true
-	case key < cur.key:
-		//left
-		return a.get(cur.left, key)
-	default:
-		//right
-		return a.get(cur.right, key)
+		value, ok = cur.value, true
 	}
+	return
 }
 
 func (a *avl) print(cur *node) (keyList []int, valueList []interface{}) {
@@ -220,34 +201,30 @@ func (a *avl) print(cur *node) (keyList []int, valueList []interface{}) {
 	}
 
 	if cur.left != nil {
-		tmp1, tmp2 := a.print(cur.left)
-		keyList = append(keyList, tmp1...)
-		valueList = append(valueList, tmp2...)
+		l1, l2 := a.print(cur.left)
+		keyList = append(keyList, l1...)
+		valueList = append(valueList, l2...)
 	}
 
 	keyList = append(keyList, cur.key)
 	valueList = append(valueList, cur.value)
 
 	if cur.right != nil {
-		tmp1, tmp2 := a.print(cur.right)
-		keyList = append(keyList, tmp1...)
-		valueList = append(valueList, tmp2...)
+		l1, l2 := a.print(cur.right)
+		keyList = append(keyList, l1...)
+		valueList = append(valueList, l2...)
 	}
 
 	return
 }
 
-func GenAVL() AVL {
-	return &avl{}
-}
-
 func (a *avl) Set(key int, value interface{}) {
 
 	a.root = a.insert(a.root, &node{
-		key:    key,
-		value:  value,
-		height: 1,
+		key:   key,
+		value: value,
 	})
+
 }
 
 func (a *avl) Del(key int) {
@@ -256,11 +233,9 @@ func (a *avl) Del(key int) {
 }
 
 func (a *avl) Get(key int) (value interface{}, ok bool) {
-
 	return a.get(a.root, key)
 }
 
 func (a *avl) Print() (keyList []int, valueList []interface{}) {
-
 	return a.print(a.root)
 }
