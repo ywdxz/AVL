@@ -7,17 +7,10 @@ type AVL interface {
 	Print() (keyList []int, valueList []interface{})
 }
 
-var max = func(a int, b int) int {
-	if a < b {
-		return b
-	}
-	return a
-}
-
 type node struct {
 	left, right *node
-	height      int
 	key         int
+	height      int
 	value       interface{}
 }
 
@@ -25,8 +18,14 @@ type avl struct {
 	root *node
 }
 
-func (a *avl) height(cur *node) int {
+var max = func(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
+}
 
+func (a *avl) height(cur *node) int {
 	if cur == nil {
 		return 0
 	}
@@ -39,8 +38,8 @@ func (a *avl) leftSpin(cur *node) (ret *node) {
 	cur.right = ret.left
 	ret.left = cur
 
-	cur.height = max(a.height(cur.left), a.height(cur.right)) + 1
 	ret.height = max(a.height(ret.left), a.height(ret.right)) + 1
+	cur.height = max(a.height(cur.left), a.height(cur.right)) + 1
 
 	return
 }
@@ -51,41 +50,28 @@ func (a *avl) rightSpin(cur *node) (ret *node) {
 	cur.left = ret.right
 	ret.right = cur
 
-	cur.height = max(a.height(cur.left), a.height(cur.right)) + 1
 	ret.height = max(a.height(ret.left), a.height(ret.right)) + 1
+	cur.height = max(a.height(cur.left), a.height(cur.right)) + 1
 
 	return
 }
 
-func (a *avl) LL_logic(cur *node) (ret *node) {
+func (a *avl) LL_logic(cur *node) *node {
 	return a.rightSpin(cur)
 }
 
-func (a *avl) RR_logic(cur *node) (ret *node) {
+func (a *avl) RR_logic(cur *node) *node {
 	return a.leftSpin(cur)
 }
 
-func (a *avl) LR_logic(cur *node) (ret *node) {
+func (a *avl) LR_logic(cur *node) *node {
 	cur.left = a.leftSpin(cur.left)
 	return a.rightSpin(cur)
 }
 
-func (a *avl) RL_logic(cur *node) (ret *node) {
+func (a *avl) RL_logic(cur *node) *node {
 	cur.right = a.rightSpin(cur.right)
 	return a.leftSpin(cur)
-}
-
-func (a *avl) getMinNode(cur *node) *node {
-	for cur.left != nil {
-		cur = cur.left
-	}
-	return cur
-}
-func (a *avl) getMaxNode(cur *node) *node {
-	for cur.right != nil {
-		cur = cur.right
-	}
-	return cur
 }
 
 func (a *avl) checkBalance(cur *node) *node {
@@ -96,6 +82,7 @@ func (a *avl) checkBalance(cur *node) *node {
 
 	switch a.height(cur.left) - a.height(cur.right) {
 	case 2:
+		//L
 		if a.height(cur.left.left) > a.height(cur.left.right) {
 			//LL
 			cur = a.LL_logic(cur)
@@ -103,8 +90,8 @@ func (a *avl) checkBalance(cur *node) *node {
 			//LR
 			cur = a.LR_logic(cur)
 		}
-
 	case -2:
+		//R
 		if a.height(cur.right.left) < a.height(cur.right.right) {
 			//RR
 			cur = a.RR_logic(cur)
@@ -112,7 +99,6 @@ func (a *avl) checkBalance(cur *node) *node {
 			//RL
 			cur = a.RL_logic(cur)
 		}
-
 	default:
 		cur.height = max(a.height(cur.left), a.height(cur.right)) + 1
 	}
@@ -120,16 +106,26 @@ func (a *avl) checkBalance(cur *node) *node {
 	return cur
 }
 
-func GenAVL() AVL {
-	return &avl{}
+func (a *avl) minNode(cur *node) *node {
+	for cur.left != nil {
+		cur = cur.left
+	}
+	return cur
+}
+
+func (a *avl) maxNode(cur *node) *node {
+	for cur.right != nil {
+		cur = cur.right
+	}
+	return cur
 }
 
 func (a *avl) insert(cur *node, new *node) (ret *node) {
 
 	switch {
 	case cur == nil:
-		new.height = 1
 		cur = new
+		cur.height = 1
 	case cur.key > new.key:
 		cur.left = a.insert(cur.left, new)
 	case cur.key < new.key:
@@ -139,7 +135,6 @@ func (a *avl) insert(cur *node, new *node) (ret *node) {
 	}
 
 	ret = a.checkBalance(cur)
-
 	return
 }
 
@@ -156,16 +151,16 @@ func (a *avl) delete(cur *node, key int) (ret *node) {
 		case cur.left == nil && cur.right == nil:
 			cur = nil
 		case cur.left != nil && cur.right != nil:
-			if a.height(cur.left) > a.height(cur.right) {
-				tmpNode := a.getMaxNode(cur.left)
-				cur.key = tmpNode.key
-				cur.value = tmpNode.value
-				cur.left = a.delete(cur.left, tmpNode.key)
-			} else {
-				tmpNode := a.getMinNode(cur.right)
+			if a.height(cur.left) < a.height(cur.right) {
+				tmpNode := a.minNode(cur.right)
 				cur.key = tmpNode.key
 				cur.value = tmpNode.value
 				cur.right = a.delete(cur.right, tmpNode.key)
+			} else {
+				tmpNode := a.maxNode(cur.left)
+				cur.key = tmpNode.key
+				cur.value = tmpNode.value
+				cur.left = a.delete(cur.left, tmpNode.key)
 			}
 		case cur.left != nil:
 			cur = cur.left
@@ -175,12 +170,10 @@ func (a *avl) delete(cur *node, key int) (ret *node) {
 	}
 
 	ret = a.checkBalance(cur)
-
 	return
 }
 
 func (a *avl) get(cur *node, key int) (value interface{}, ok bool) {
-
 	switch {
 	case cur == nil:
 		value, ok = nil, false
@@ -214,8 +207,11 @@ func (a *avl) print(cur *node) (keyList []int, valueList []interface{}) {
 		keyList = append(keyList, l1...)
 		valueList = append(valueList, l2...)
 	}
-
 	return
+}
+
+func GenAVL() AVL {
+	return &avl{}
 }
 
 func (a *avl) Set(key int, value interface{}) {
@@ -224,11 +220,9 @@ func (a *avl) Set(key int, value interface{}) {
 		key:   key,
 		value: value,
 	})
-
 }
 
 func (a *avl) Del(key int) {
-
 	a.root = a.delete(a.root, key)
 }
 

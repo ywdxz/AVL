@@ -23,6 +23,8 @@ func Test_avl(t *testing.T) {
 		a.Set(i, fmt.Sprintf("%d", i))
 	}
 	l1, l2 = a.Print()
+	fmt.Println(l1)
+	fmt.Println(l2)
 	assert.Equal(t, 101, len(l1))
 	assert.Equal(t, 101, len(l2))
 
