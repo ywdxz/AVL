@@ -1,5 +1,9 @@
 package avl
 
+// AVL 平衡二叉树
+/*
+任何一个节点的左子树和右子树高度差不超过1
+*/
 type AVL interface {
 	Set(key int, value interface{})
 	Del(key int)
@@ -32,43 +36,107 @@ func (a *avl) height(cur *node) int {
 	return cur.height
 }
 
+// leftSpin 左旋转
+/*
+  	   a              c
+     /   \          /   \
+    b     c   =>   a     h
+   / \   / \      / \
+  e   f g   h    b   g
+                / \
+               e   f
+*/
 func (a *avl) leftSpin(cur *node) (ret *node) {
 
 	ret = cur.right
 	cur.right = ret.left
 	ret.left = cur
 
-	ret.height = max(a.height(ret.left), a.height(ret.right)) + 1
 	cur.height = max(a.height(cur.left), a.height(cur.right)) + 1
+	ret.height = max(a.height(ret.left), a.height(ret.right)) + 1
 
 	return
 }
 
+// rightSpin 右旋转
+/*
+  	   a              b
+     /   \          /   \
+    b     c   =>   e     a
+   / \   / \            / \
+  e   f g   h          f   c
+                          / \
+                         g   h
+*/
 func (a *avl) rightSpin(cur *node) (ret *node) {
 
 	ret = cur.left
 	cur.left = ret.right
 	ret.right = cur
 
-	ret.height = max(a.height(ret.left), a.height(ret.right)) + 1
 	cur.height = max(a.height(cur.left), a.height(cur.right)) + 1
+	ret.height = max(a.height(ret.left), a.height(ret.right)) + 1
 
 	return
 }
 
+// LL_logic
+// 右旋
+/*
+        a                b
+      /   \            /   \
+     b     c          d      a
+    / \              / \    / \
+   d   e      =>    f   g  e   c
+  / \
+ f   g
+*/
 func (a *avl) LL_logic(cur *node) *node {
 	return a.rightSpin(cur)
 }
 
+//RR_logic
+//左旋
+/*
+   a                          c
+ /   \                       /  \
+b     c         =>          a     e
+     / \                   / \   / \
+    d   e                 b   d f   g
+       / \
+      f   g
+*/
 func (a *avl) RR_logic(cur *node) *node {
 	return a.leftSpin(cur)
 }
 
+// LR_logic
+// 左右旋
+/*
+        a                  a                   e
+      /   \              /   \               /   \
+     b     c            e     c             b     a
+    / \                / \                 / \   / \
+   d   e        =>    b   g         =>    d   f g   c
+      / \            / \
+     f   g          d   f
+*/
 func (a *avl) LR_logic(cur *node) *node {
 	cur.left = a.leftSpin(cur.left)
 	return a.rightSpin(cur)
 }
 
+// RL_logic
+// 左右旋
+/*
+   a
+ /   \
+b     c
+     / \
+    d   e
+   / \
+  f   g
+*/
 func (a *avl) RL_logic(cur *node) *node {
 	cur.right = a.rightSpin(cur.right)
 	return a.leftSpin(cur)
