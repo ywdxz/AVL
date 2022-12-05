@@ -38,7 +38,7 @@ func (a *avl) height(cur *node) int {
 
 // leftSpin 左旋转
 /*
-  	   a              c
+       a              c
      /   \          /   \
     b     c   =>   a     h
    / \   / \      / \
@@ -60,7 +60,7 @@ func (a *avl) leftSpin(cur *node) (ret *node) {
 
 // rightSpin 右旋转
 /*
-  	   a              b
+       a              b
      /   \          /   \
     b     c   =>   e     a
    / \   / \            / \
